@@ -34,14 +34,17 @@ internal static class Program
     static HediffDef ControlSublinkDef, RemoteRepairerDef, MechFormfeederDef, WarprogrammerDef, ShoulderTurretDef, SharpTalonsDef;
     static HediffDef RemoteShielderDef, RepairProbeDef, RemoteDominatorDef, RemoteResurrectorDef, SignalBoosterDef,
         MechwombDef, ShoulderBeamActiveDef, ShoulderChargeActiveDef, PlasteelClawsDef, InfectorHandsDef, InfectorMouthDef,
-        SauridClawsDef, SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef;
-    static BodyPartDef BrainDef, HeadDef, FingerDef, TorsoDef, HandDef, JawDef;
+        SauridClawsDef, SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef,
+        NeutroamineIncubatorDef, GrowthStimulatorDef;
+    static HediffDef TraumaSavantDef, SuturedEyeDef, SuturedMouthDef;
+    static BodyPartDef BrainDef, HeadDef, FingerDef, TorsoDef, HandDef, JawDef, EyeDef;
     // Assigned in LoadRealData: a field initializer here would force the game assemblies to load
     // before Main registers the AssemblyLoadContext resolver.
     static Dictionary<string, BodyPartDef> PartDefs;
 
-    // Exact user-approved set for v1.2.0 (original 8 + 16 newly approved). The tests assert the mod
-    // protects exactly this set and nothing else.
+    // Exact user-approved set for v1.2.1 (24 prior + 2 J resource-farm implants). The tests assert
+    // the mod protects exactly this set and nothing else; TraumaSavant and the two WCE2 sutures are
+    // deliberately excluded because the user chose to let the biosculpter heal them.
     static readonly string[] ApprovedDefNames =
     {
         "VPEP_Puppet", "VPEP_Puppeteer", "ControlSublinkImplant", "RemoteRepairerImplant",
@@ -51,6 +54,7 @@ internal static class Program
         "LTS_ShoulderBeamTurretActive", "LTS_ShoulderChargeTurretActive", "VRE_SharpTalons",
         "VQEA_PlasteelClaws", "VRE_InfectorHands", "VRE_InfectorMouth", "VRESaurids_SauridClaws",
         "SentienceCatalyst", "MAG_ArchonexusCore_One", "MAG_ArchonexusCore_Two", "MAG_ArchonexusCore_Three",
+        "WCE2_NeutroamineIncubator", "WCE2_GrowthStimulator",
     };
     static List<BodyPartDef> VanillaRestore, EnhancedRestore;
 
@@ -115,8 +119,8 @@ internal static class Program
         // ---------- Install the fix exactly as the game does ----------
         RuntimeHelpers.RunClassConstructor(typeof(RimworldBiosculpterCompatStartup).TypeHandle);
         Console.WriteLine("\n== Harmony registration ==");
-        Check("startup logged its banner via Verse.Log", GameLog.Any(l => l.StartsWith("[Rimworld Biosculpter Compat 1.2.0]")));
-        Check("startup log names all 24 protected defNames", PreservedHediffs.AllDefNames.All(n => GameLog.Any(l => l.Contains(n))));
+        Check("startup logged its banner via Verse.Log", GameLog.Any(l => l.StartsWith("[Rimworld Biosculpter Compat 1.2.1]")));
+        Check("startup log names all 26 protected defNames", PreservedHediffs.AllDefNames.All(n => GameLog.Any(l => l.Contains(n))));
         var cc = Harmony.GetPatchInfo(CycleCompletedMethod);
         Check("CycleCompleted prefix from the mod",
             cc.Prefixes.Any(p => p.owner == RimworldBiosculpterCompatStartup.HarmonyId && p.PatchMethod.DeclaringType == typeof(Patch_HealingCycle_CycleCompleted)));
@@ -142,17 +146,23 @@ internal static class Program
         // ---------- Exact def checks ----------
         Console.WriteLine("\n== Exact defName matching ==");
         foreach (var def in AllProtectedDefs()) Check($"{def.defName} preserved-def", PreservedHediffs.IsPreservedDef(def));
-        Check("approved list has 24 unique defNames (8 original + 16 newly approved)",
-            ApprovedDefNames.Length == 24 && ApprovedDefNames.Distinct().Count() == 24);
-        Check("mod protects exactly the 24 approved defNames (none missing, no unapproved)",
+        Check("approved list has 26 unique defNames (24 prior + 2 J resource farms)",
+            ApprovedDefNames.Length == 26 && ApprovedDefNames.Distinct().Count() == 26);
+        Check("mod protects exactly the 26 approved defNames (none missing, no unapproved)",
             PreservedHediffs.AllDefNames.OrderBy(n => n, StringComparer.Ordinal)
                 .SequenceEqual(ApprovedDefNames.OrderBy(n => n, StringComparer.Ordinal)));
-        Check("mod's own list has 24 unique defNames",
-            PreservedHediffs.AllDefNames.Length == 24 && PreservedHediffs.AllDefNames.Distinct().Count() == 24);
+        Check("mod's own list has 26 unique defNames",
+            PreservedHediffs.AllDefNames.Length == 26 && PreservedHediffs.AllDefNames.Distinct().Count() == 26);
         Check("every approved defName is protected",
             ApprovedDefNames.All(n => PreservedHediffs.IsPreservedDef(new HediffDef { defName = n })));
         Check("VPEP_BrainLeech NOT preserved", !PreservedHediffs.IsPreservedDef(BrainLeechDef));
         Check("ordinary injury NOT preserved", !PreservedHediffs.IsPreservedDef(InjuryDef));
+        Check("TraumaSavant NOT preserved (deliberate K choice: let the pod heal speech/hearing)",
+            !PreservedHediffs.IsPreservedDef(TraumaSavantDef));
+        Check("WCE2_SuturedEye NOT preserved (deliberate L choice: let the pod remove sutures)",
+            !PreservedHediffs.IsPreservedDef(SuturedEyeDef));
+        Check("WCE2_SuturedMouth NOT preserved (deliberate L choice: let the pod remove sutures)",
+            !PreservedHediffs.IsPreservedDef(SuturedMouthDef));
         foreach (var n in new[]
                  {
                      "vpep_puppet", "VPEP_Puppet ", "VPEP_PuppetX", "VPEP_Puppeteers", "Puppet", "Puppeteer",
@@ -162,7 +172,10 @@ internal static class Program
                      "Mechwomb", "LTS_ShoulderBeamTurret", "LTS_ShoulderChargeTurret",
                      "MAG_ArchonexusCore_", "MAG_ArchonexusCore_Four", "mag_ArchonexusCore_One",
                      "VQEA_PlasteelClaw", "VRE_InfectorHand", "VRE_InfectorMouths", "VRESaurids_SauridClaw",
-                     "sentiencecatalyst", "SentienceCatalystX", "SentienceCatalyst "
+                     "sentiencecatalyst", "SentienceCatalystX", "SentienceCatalyst ",
+                     "wce2_neutroamineincubator", "WCE2_NeutroamineIncubators", "NeutroamineIncubator",
+                     "WCE2_GrowthStimulators", "GrowthStimulator", "WCE2_GrowthStimulator ",
+                     "traumasavant", "TraumaSavantX", "WCE2_SuturedEyes", "WCE2_SuturedMouth "
                  })
             Check($"'{n}' NOT preserved (exact, case-sensitive)", !PreservedHediffs.IsPreservedDef(new HediffDef { defName = n }));
         Check("null def NOT preserved", !PreservedHediffs.IsPreservedDef(null));
@@ -210,6 +223,30 @@ internal static class Program
             // Medic cycle description is not touched.
             string medicText = Medic().GetHealingDescriptionForPawn(pawn);
             Check($"{path}: medic cycle description unaffected (still lists injury)", medicText.Contains(InjuryDef.label));
+        }
+
+        // ---------- Deliberate K/L healing choice: excluded defs stay curable and visible ----------
+        // The user explicitly chose to heal TraumaSavant (K) and the two WCE2 sutures (L). These are
+        // regression assertions: neither protection may leak onto them, on either cycle implementation.
+        Console.WriteLine("\n== Deliberate K/L healing choice: excluded defs remain curable ==");
+        foreach (bool eb in new[] { false, true })
+        {
+            SetEb(eb);
+            string path = eb ? "EB prefix path" : "vanilla CycleCompleted body + EB restore list";
+            foreach (var def in new[] { TraumaSavantDef, SuturedEyeDef, SuturedMouthDef })
+            {
+                var (pawn, target, _, injury) = MakePawn(def);
+                RunCycle(Regen(), pawn);
+                Check($"{path}: {def.defName} deliberately NOT protected -> cured by bioregeneration", !Has(pawn, target));
+                Check($"{path}: {def.defName} cure does not disturb ordinary healing", !Has(pawn, injury));
+
+                var (previewPawn, previewTarget, _, _) = MakePawn(def);
+                string preview = Regen().GetHealingDescriptionForPawn(previewPawn);
+                Check($"{path}: {def.defName} still appears in the preview (offered to cure) ('{def.label}')",
+                    preview.Contains(def.label));
+                Check($"{path}: {def.defName} preview case still leaves the hediff in place", Has(previewPawn, previewTarget));
+                Check($"{path}: {def.defName} description scope closed after the call", BiosculpterScope.DescriptionPawn == null);
+            }
         }
 
         // ---------- Outside the cycle: removal unaffected ----------
@@ -276,6 +313,9 @@ internal static class Program
             var (pawn2, keep2, _, injury2) = MakePawn(SharpTalonsDef);
             RunCycle(Regen(), pawn2);
             Check("EB absent: VRE_SharpTalons still preserved on the vanilla body", Has(pawn2, keep2) && !Has(pawn2, injury2));
+            var (pawn3, keep3, _, injury3) = MakePawn(NeutroamineIncubatorDef);
+            RunCycle(Regen(), pawn3);
+            Check("EB absent: WCE2_NeutroamineIncubator still preserved on the vanilla body", Has(pawn3, keep3) && !Has(pawn3, injury3));
         }
         Check("EB absent: optional patch helper with a missing type is a safe no-op",
             EnhancedBioregenerationSupport.PatchType(new Harmony("test.ebless"), null) == 0);
@@ -288,7 +328,7 @@ internal static class Program
         modHarmony.UnpatchAll(RimworldBiosculpterCompatStartup.HarmonyId);
         SetEb(true);
         {
-            foreach (var def in new[] { PuppetDef, SharpTalonsDef, ControlSublinkDef })
+            foreach (var def in new[] { PuppetDef, SharpTalonsDef, ControlSublinkDef, GrowthStimulatorDef })
             {
                 var (pawn, target, _, _) = MakePawn(def);
                 RunCycle(Regen(), pawn);
@@ -303,7 +343,8 @@ internal static class Program
         RemoteShielderDef, RepairProbeDef, WarprogrammerDef, RemoteDominatorDef, RemoteResurrectorDef,
         SignalBoosterDef, MechwombDef, ShoulderTurretDef, ShoulderBeamActiveDef, ShoulderChargeActiveDef,
         SharpTalonsDef, PlasteelClawsDef, InfectorHandsDef, InfectorMouthDef, SauridClawsDef,
-        SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef
+        SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef,
+        NeutroamineIncubatorDef, GrowthStimulatorDef
     };
 
     // The body part each approved hediff actually attaches to, from its installing ThingDef /
@@ -312,7 +353,10 @@ internal static class Program
     static string PartName(HediffDef def)
     {
         if (def == SharpTalonsDef || def == PlasteelClawsDef || def == InfectorHandsDef || def == SauridClawsDef) return "Hand";
-        if (def == InfectorMouthDef) return "Jaw";
+        if (def == InfectorMouthDef || def == SuturedMouthDef) return "Jaw";
+        if (def == SuturedEyeDef) return "Eye";
+        if (def == TraumaSavantDef) return "Brain";
+        if (def == NeutroamineIncubatorDef || def == GrowthStimulatorDef) return "Torso";
         if (def == ShoulderTurretDef || def == ShoulderBeamActiveDef || def == ShoulderChargeActiveDef
             || def == MechwombDef || def == ArchonexusKeyOneDef || def == ArchonexusKeyTwoDef
             || def == ArchonexusKeyThreeDef) return "Torso";
@@ -329,19 +373,37 @@ internal static class Program
         // Defs are instantiated as plain HediffWithComps so removal side effects (puppet PostRemoved,
         // implant messages) need no engine plumbing; the real hediffClass from the installed XML is
         // still asserted, and the protection only ever compares defName.
-        HediffDef FromXml(XDocument doc, string defName, string expectedClass, string expectedLabel)
+        HediffDef FromXml(XDocument doc, string defName, string expectedClass, string expectedLabel, params XDocument[] parentDocs)
         {
             var el = doc.Root.Elements("HediffDef").Single(e => (string)e.Element("defName") == defName);
-            string cls = (string)el.Element("hediffClass");
+
+            // Real mods use ParentName inheritance for hediffClass and flags. Resolve it across the
+            // fixture set so the assertions read what the game would load, not just the direct child.
+            IEnumerable<XDocument> docs = new[] { doc }.Concat(parentDocs);
+            string Inherited(XElement node, string field)
+            {
+                for (int guard = 0; node != null && guard < 32; guard++)
+                {
+                    var value = node.Element(field);
+                    if (value != null) return (string)value;
+                    string parent = (string)node.Attribute("ParentName");
+                    if (parent == null) return null;
+                    node = docs.SelectMany(d => d.Root.Elements("HediffDef"))
+                        .FirstOrDefault(e => (string)e.Attribute("Name") == parent);
+                }
+                return null;
+            }
+
+            string cls = Inherited(el, "hediffClass");
             string label = (string)el.Element("label");
             Check($"{defName}: installed hediffClass is {expectedClass}", cls == expectedClass);
             Check($"{defName}: installed label is '{expectedLabel}'", label == expectedLabel);
-            bool everCurable = el.Element("everCurableByItem") == null || bool.Parse((string)el.Element("everCurableByItem"));
+            bool everCurable = Inherited(el, "everCurableByItem") == null || bool.Parse(Inherited(el, "everCurableByItem"));
             Check($"{defName}: everCurableByItem is default true (bioregeneration WillHeal can cure it)", everCurable);
-            bool addedPart = el.Element("countsAsAddedPartOrImplant") != null && bool.Parse((string)el.Element("countsAsAddedPartOrImplant"));
+            bool addedPart = Inherited(el, "countsAsAddedPartOrImplant") != null && bool.Parse(Inherited(el, "countsAsAddedPartOrImplant"));
             Check($"{defName}: not flagged countsAsAddedPartOrImplant", !addedPart);
-            Check($"{defName}: not chronic", el.Element("chronic") == null);
-            bool keepOnRestore = el.Element("keepOnBodyPartRestoration") != null && bool.Parse((string)el.Element("keepOnBodyPartRestoration"));
+            Check($"{defName}: not chronic", Inherited(el, "chronic") == null);
+            bool keepOnRestore = Inherited(el, "keepOnBodyPartRestoration") != null && bool.Parse(Inherited(el, "keepOnBodyPartRestoration"));
             Console.WriteLine($"    {defName}: keepOnBodyPartRestoration={keepOnRestore} (vanilla ignores this flag during the cycle)");
             return new HediffDef
             {
@@ -350,7 +412,7 @@ internal static class Program
                 hediffClass = typeof(HediffWithComps),
                 everCurableByItem = everCurable,
                 countsAsAddedPartOrImplant = addedPart,
-                chronic = el.Element("chronic") != null && bool.Parse((string)el.Element("chronic")),
+                chronic = Inherited(el, "chronic") != null && bool.Parse(Inherited(el, "chronic")),
             };
         }
 
@@ -409,6 +471,20 @@ internal static class Program
         ArchonexusKeyTwoDef = FromXml(mag, "MAG_ArchonexusCore_Two", "HediffWithComps", "Archonexus key II");
         ArchonexusKeyThreeDef = FromXml(mag, "MAG_ArchonexusCore_Three", "HediffWithComps", "Archonexus key III");
 
+        // ---- v1.2.1 additions: J resource farms from real WCE2 XML; K/L exclusions from real source ----
+        var wceGrowths = XDocument.Load(Path.Combine(data, "WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Growths.xml"));
+        var wceImplants = XDocument.Load(Path.Combine(data, "WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Implants.xml"));
+        var wceTorsoRecipes = XDocument.Load(Path.Combine(data, "WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_Implants_Torso.xml"));
+        var wceLowTechRecipes = XDocument.Load(Path.Combine(data, "WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_LowTech.xml"));
+        var coreMisc = XDocument.Load(Path.Combine(data, "Core_Defs_HediffDefs_Hediffs_Local_Misc.xml"));
+        var giverSets = XDocument.Load(Path.Combine(data, "Core_Defs_HediffGiverSetDefs_HediffGiverSets.xml"));
+
+        NeutroamineIncubatorDef = FromXml(wceGrowths, "WCE2_NeutroamineIncubator", "Hediff_Implant", "neutroamine incubator", wceImplants);
+        GrowthStimulatorDef = FromXml(wceGrowths, "WCE2_GrowthStimulator", "Hediff_Implant", "growth stimulator", wceImplants);
+        TraumaSavantDef = FromXml(coreMisc, "TraumaSavant", "HediffWithComps", "trauma savant");
+        SuturedEyeDef = FromXml(wceImplants, "WCE2_SuturedEye", "Hediff_Implant", "sutured eye", wceImplants);
+        SuturedMouthDef = FromXml(wceImplants, "WCE2_SuturedMouth", "Hediff_Implant", "sutured mouth", wceImplants);
+
         // ---- runtime attachment evidence: the part comes from the install comp / VEF gene extension ----
         string InstallBodyPart(XDocument doc, string hediff) =>
             doc.Descendants("li")
@@ -427,6 +503,68 @@ internal static class Program
             doc.Descendants("RecipeDef").Where(r => (string)r.Element("defName") == recipe)
                .SelectMany(r => r.Element("appliedOnFixedBodyParts")?.Elements("li") ?? Enumerable.Empty<XElement>())
                .Select(e => e.Value.Trim()).ToList();
+
+        XElement WceDef(string defName) => wceGrowths.Root.Elements("HediffDef")
+            .Single(e => (string)e.Element("defName") == defName);
+        bool RecipeAddsHediff(XDocument doc, string recipe, string hediff) =>
+            doc.Descendants("RecipeDef").Where(r => (string)r.Element("defName") == recipe)
+               .Any(r => (string)r.Element("addsHediff") == hediff);
+        bool RecipeConsumesOne(XDocument doc, string recipe, string thingDef) =>
+            doc.Descendants("RecipeDef").Where(r => (string)r.Element("defName") == recipe)
+               .SelectMany(r => r.Element("ingredients")?.Elements("li") ?? Enumerable.Empty<XElement>())
+               .Any(li => (string)li.Element("filter")?.Element("thingDefs")?.Element("li") == thingDef
+                          && (int?)li.Element("count") == 1);
+
+        // J resource farms: installed from a consumed item, not a bodyPart on the HediffDef. The cure
+        // path is RemoveHediff with no spawnThingOnRemoved refund, so protecting them preserves both
+        // the implant and its adverse effects (the deathMtbDays timer) as the user accepted.
+        Check("WCE2_NeutroamineIncubator install recipe mounts on Torso",
+            RecipeInstallParts(wceTorsoRecipes, "WCE2_InstallNeutroamineIncubator").SequenceEqual(new[] { "Torso" }));
+        Check("WCE2_NeutroamineIncubator install recipe adds the exact hediff",
+            RecipeAddsHediff(wceTorsoRecipes, "WCE2_InstallNeutroamineIncubator", "WCE2_NeutroamineIncubator"));
+        Check("WCE2_NeutroamineIncubator install recipe consumes the item x1",
+            RecipeConsumesOne(wceTorsoRecipes, "WCE2_InstallNeutroamineIncubator", "WCE2_NeutroamineIncubator"));
+        Check("WCE2_NeutroamineIncubator def has no bodyPart of its own (part comes from the install recipe)",
+            WceDef("WCE2_NeutroamineIncubator").Element("bodyPart") == null);
+        Check("WCE2_NeutroamineIncubator has no spawnThingOnRemoved (biosculpter cure never refunds the item)",
+            WceDef("WCE2_NeutroamineIncubator").Element("spawnThingOnRemoved") == null);
+        Check("WCE2_NeutroamineIncubator carries deathMtbDays 60 (preserving it preserves the lethal timer)",
+            (int?)WceDef("WCE2_NeutroamineIncubator").Descendants("deathMtbDays").FirstOrDefault() == 60);
+
+        Check("WCE2_GrowthStimulator install recipe mounts on Torso",
+            RecipeInstallParts(wceTorsoRecipes, "WCE2_InstallGrowthStimulator").SequenceEqual(new[] { "Torso" }));
+        Check("WCE2_GrowthStimulator install recipe adds the exact hediff",
+            RecipeAddsHediff(wceTorsoRecipes, "WCE2_InstallGrowthStimulator", "WCE2_GrowthStimulator"));
+        Check("WCE2_GrowthStimulator install recipe consumes the item x1",
+            RecipeConsumesOne(wceTorsoRecipes, "WCE2_InstallGrowthStimulator", "WCE2_GrowthStimulator"));
+        Check("WCE2_GrowthStimulator def has no bodyPart of its own (part comes from the install recipe)",
+            WceDef("WCE2_GrowthStimulator").Element("bodyPart") == null);
+        Check("WCE2_GrowthStimulator has no spawnThingOnRemoved (biosculpter cure never refunds the item)",
+            WceDef("WCE2_GrowthStimulator").Element("spawnThingOnRemoved") == null);
+        Check("WCE2_GrowthStimulator carries deathMtbDays 30 (preserving it preserves the lethal timer)",
+            (int?)WceDef("WCE2_GrowthStimulator").Descendants("deathMtbDays").FirstOrDefault() == 30);
+
+        // K/L evidence: deliberately excluded, and still removable by the cycle.
+        Check("TraumaSavant is a vanilla brain-injury giver on Brain with chancePerDamagePct 0.12",
+            giverSets.Descendants("HediffGiverSetDef").Single(e => (string)e.Element("defName") == "Human")
+                .Descendants("li").Any(li => (string)li.Element("hediff") == "TraumaSavant"
+                    && (string)li.Element("partsToAffect")?.Element("li") == "Brain"
+                    && (double?)li.Element("chancePerDamagePct") == 0.12));
+        Check("TraumaSavant def has no bodyPart of its own (runtime part is Brain via the giver)",
+            coreMisc.Root.Elements("HediffDef").Single(e => (string)e.Element("defName") == "TraumaSavant").Element("bodyPart") == null);
+
+        Check("WCE2_SutureEye install recipe mounts on Eye",
+            RecipeInstallParts(wceLowTechRecipes, "WCE2_SutureEye").SequenceEqual(new[] { "Eye" }));
+        Check("WCE2_SutureEye install recipe adds the exact hediff",
+            RecipeAddsHediff(wceLowTechRecipes, "WCE2_SutureEye", "WCE2_SuturedEye"));
+        Check("WCE2_SutureMouth install recipe mounts on Jaw",
+            RecipeInstallParts(wceLowTechRecipes, "WCE2_SutureMouth").SequenceEqual(new[] { "Jaw" }));
+        Check("WCE2_SutureMouth install recipe adds the exact hediff",
+            RecipeAddsHediff(wceLowTechRecipes, "WCE2_SutureMouth", "WCE2_SuturedMouth"));
+        Check("WCE2_SuturedEye has spawnThingOnRemoved=Cloth but the cure path does not spawn it",
+            (string)wceImplants.Root.Elements("HediffDef").Single(e => (string)e.Element("defName") == "WCE2_SuturedEye").Element("spawnThingOnRemoved") == "Cloth");
+        Check("WCE2_SuturedMouth has spawnThingOnRemoved=Cloth but the cure path does not spawn it",
+            (string)wceImplants.Root.Elements("HediffDef").Single(e => (string)e.Element("defName") == "WCE2_SuturedMouth").Element("spawnThingOnRemoved") == "Cloth");
 
         var odysseyItems = XDocument.Load(Path.Combine(data, "Odyssey_ThingDefs_Items_Items_Exotic.xml"));
         Check("RemoteShielderImplant install comp attaches to Brain (Biotech XML)", InstallBodyPart(biotech, "RemoteShielderImplant") == "Brain");
@@ -468,6 +606,7 @@ internal static class Program
         TorsoDef = new BodyPartDef { defName = "Torso" };
         HandDef = new BodyPartDef { defName = "Hand" };
         JawDef = new BodyPartDef { defName = "Jaw" };
+        EyeDef = new BodyPartDef { defName = "Eye" };
         PartDefs = new Dictionary<string, BodyPartDef>();
         PartDefs["Brain"] = BrainDef;
         PartDefs["Head"] = HeadDef;
@@ -475,6 +614,7 @@ internal static class Program
         PartDefs["Torso"] = TorsoDef;
         PartDefs["Hand"] = HandDef;
         PartDefs["Jaw"] = JawDef;
+        PartDefs["Eye"] = EyeDef;
         BodyPartDef Bp(string n) => PartDefs.TryGetValue(n, out var d) ? d : PartDefs[n] = new BodyPartDef { defName = n };
 
         var ideo = XDocument.Load(Path.Combine(data, "Ideology_ThingDefs_Buildings_Buildings_Ideo.xml"));
@@ -547,6 +687,7 @@ internal static class Program
         var hand = new BodyPartRecord { def = HandDef };
         var finger = new BodyPartRecord { def = FingerDef };
         var jaw = new BodyPartRecord { def = JawDef };
+        var eye = new BodyPartRecord { def = EyeDef, parent = head };
 
         BodyPartRecord Part(HediffDef def)
         {
@@ -554,6 +695,7 @@ internal static class Program
             if (name == "Hand") return hand;
             if (name == "Torso") return torso;
             if (name == "Jaw") return jaw;
+            if (name == "Eye") return eye;
             return brain;
         }
 

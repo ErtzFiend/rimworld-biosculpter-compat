@@ -3,7 +3,7 @@
 A RimWorld 1.7 Harmony mod. It stops a biosculpter **bioregeneration** cycle from "healing" away
 implants, gene hediffs and psycast hediffs that are part of a pawn's build rather than injuries.
 
-Protected (exact `defName`, nothing else; 24 in total):
+Protected (exact `defName`, nothing else; 26 in total):
 
 | defName | label | where | source mod |
 |---|---|---|---|
@@ -31,6 +31,8 @@ Protected (exact `defName`, nothing else; 24 in total):
 | `MAG_ArchonexusCore_One` | Archonexus key I | torso | More Archotech Garbage |
 | `MAG_ArchonexusCore_Two` | Archonexus key II | torso | More Archotech Garbage |
 | `MAG_ArchonexusCore_Three` | Archonexus key III | torso | More Archotech Garbage |
+| `WCE2_NeutroamineIncubator` | neutroamine incubator | torso | War Crimes Expanded 2 (`Mersid.WCE2Updated.Core`) |
+| `WCE2_GrowthStimulator` | growth stimulator | torso | War Crimes Expanded 2 (`Mersid.WCE2Updated.Core`) |
 
 Those defNames were read from the live, enabled mod set — never guessed from a label. Several
 unrelated defs share the same label text (`ThingDef` names on the install items), so the table above
@@ -42,6 +44,20 @@ active hediffs carry no `bodyPart` in their own XML; their install recipes are
 `appliedOnFixedBodyParts Torso`, so that is the runtime mount. If LTS ever adds them with no part at
 all they are already outside the part-restore gate, and the protection is a harmless no-op.
 
+The two WCE2 resource farms are the **J** additions in 1.2.1. Both are `Hediff_Implant`s whose
+part exists only in the install recipe (`appliedOnFixedBodyParts Torso`); the install consumes the
+`WCE2_*` item and the biosculpter cure path never refunds it. Protecting them preserves a deliberate
+farm, **including its adverse effects**: the same hediff carries `deathMtbDays` 60 (neutroamine) and
+30 (growth stimulator), plus pain, hunger and the giver conditions. The mod does not strip those
+effects; it only stops the pod from deleting the implant. If you do not want the timer, do not enable
+these farms or remove the implant surgically.
+
+**Deliberately not protected (the user's K/L healing choice):** `TraumaSavant` (K) and the WCE2
+sutures `WCE2_SuturedEye` / `WCE2_SuturedMouth` (L). The pod still cures them: a trauma savant gets
+speech and hearing back at the cost of the +0.5 Manipulation bonus, and sutures are removed. They also
+still appear in the pod's "will heal" preview on both the vanilla and Enhanced Bioregeneration paths.
+That is intentional, and the regression suite asserts it explicitly.
+
 ## The problem
 
 `CompBiosculpterPod_HealingCycle.CycleCompleted` cures any hediff whose body part is listed in the
@@ -52,7 +68,7 @@ brain/torso/hand/jaw hediffs normally survive. **BattIePatch: Enhanced Bioregene
 with its own `HealingCycle_Utils.CycleCompleted` when any of its scar or regeneration settings is on.
 That version also calls `HealthUtility.Cure`.
 
-All 24 hediffs use the default `everCurableByItem=true`, none sets `countsAsAddedPartOrImplant`, and
+All 26 hediffs use the default `everCurableByItem=true`, none sets `countsAsAddedPartOrImplant`, and
 none is `chronic`; `keepOnBodyPartRestoration` (set only on the leveled mechanitor implants) is
 ignored by the cycle. So once their part is restorable they are cured like injuries. Results:
 mechanitor implants and the shoulder turrets vanish, the sanguophage loses both talons, the fungoid
@@ -71,11 +87,11 @@ be healed" while it actually survived. That mismatch is fixed in 1.1.0 and remai
   `HealingCycle_Utils.WillHeal` returns false for a preserved hediff of the pawn in scope. This
   covers both the cycle and the "will heal" tooltip text on both description implementations.
 * A prefix on `HealthUtility.Cure(Hediff)` is a backstop: it skips the cure only when the scope is
-  open, the hediff belongs to the occupant, and its `defName` is exactly one of the 24.
+  open, the hediff belongs to the occupant, and its `defName` is exactly one of the 26.
 
 Everything else stays the same: wounds, scars, missing parts, blood loss, conditions, other brain
 hediffs (for example `VPEP_BrainLeech`), medic cycles, and any removal outside the cycle. Implants
-are not made incurable globally and nothing is suppressed except the 24 defNames above.
+are not made incurable globally and nothing is suppressed except the 26 defNames above.
 
 ## Compatibility
 
@@ -84,38 +100,42 @@ are not made incurable globally and nothing is suppressed except the 24 defNames
 * Required: **Harmony** only. Every protection is inert when its mod is absent.
 * Optional, load after: Biotech, Ideology, Odyssey, Vanilla Psycasts Expanded + Puppeteer, Vanilla
   Races Expanded – Sanguophage/Fungoid/Saurid, Vanilla Quests Expanded – Ancients, Integrated Implants
-  (`lts.i`), More Archotech Garbage (`zal.morearchotechgarbage`), Vanilla Factions Expanded – Core
+  (`lts.i`), More Archotech Garbage (`zal.morearchotechgarbage`), War Crimes Expanded 2
+  (`Mersid.WCE2Updated.Core`), Vanilla Factions Expanded – Core
   (required by Integrated Implants' shoulder weaponry) and BattIePatch: Enhanced Bioregeneration (also
   improves the tooltip). `loadAfter` lists them all; none is a hard dependency.
 * No save-game data. You can add or remove the mod at any time.
 
-## Installing 1.2.0
+## Installing 1.2.1
 
-Upgrading from 1.1.0 needs no migration: same package id, same Harmony id, no defs or save data of its
+Upgrading from 1.2.0 needs no migration: same package id, same Harmony id, no defs or save data of its
 own. Close RimWorld, replace the old `Mods/RimworldBiosculpterCompat` folder with the one from
-`RimworldBiosculpterCompat-1.2.0.zip`, then restart. Saves load unchanged; already-lost implants are
+`RimworldBiosculpterCompat-1.2.1.zip`, then restart. Saves load unchanged; already-lost implants are
 not restored.
 
 Upgrading from **Puppet Bio-Regeneration Fix 1.0.0** (different package and Harmony id):
 
 1. Close RimWorld.
 2. In `ModsConfig.xml` disable **Puppet Bio-Regeneration Fix** (or unsubscribe/remove it). If you
-   leave both enabled, 1.0.0's Harmony ID (`ErtzFiend.PuppetBioRegenerationFix`) and 1.2.0's
+   leave both enabled, 1.0.0's Harmony ID (`ErtzFiend.PuppetBioRegenerationFix`) and 1.2.1's
    (`ErtzFiend.RimworldBiosculpterCompat`) both patch the same methods; 1.0.0's narrower rules still
    work, but the tooltip fix and the new protections are only complete with 1.0.0 removed.
-3. Delete the old `Mods/PuppetBioRegenFix` folder. It ships `PuppetBioRegenFix.dll`; 1.2.0 ships
+3. Delete the old `Mods/PuppetBioRegenFix` folder. It ships `PuppetBioRegenFix.dll`; 1.2.1 ships
    `RimworldBiosculpterCompat.dll`, and two mods must never be left side by side with the old one.
-4. Extract `RimworldBiosculpterCompat` from `RimworldBiosculpterCompat-1.2.0.zip` into RimWorld's
+4. Extract `RimworldBiosculpterCompat` from `RimworldBiosculpterCompat-1.2.1.zip` into RimWorld's
    `Mods` directory.
 5. Enable **Rimworld Biosculpter Compat** after Harmony and after the optional mods you use, in the
    order listed in `loadAfter`, then restart RimWorld.
-6. Check the log for `[Rimworld Biosculpter Compat 1.2.0] Harmony ErtzFiend.RimworldBiosculpterCompat:
-   protecting ...` with all 24 defNames.
+6. Check the log for `[Rimworld Biosculpter Compat 1.2.1] Harmony ErtzFiend.RimworldBiosculpterCompat:
+   protecting ...` with all 26 defNames.
 
-This prevents future cycle-related removal. Version 1.2.0 passed 690 executable regression assertions
+This prevents future cycle-related removal. Version 1.2.1 passed 818 executable regression assertions
 against the installed game assemblies, covering both vanilla and Enhanced Bioregeneration completion
-and description paths, plus the Enhanced-Bioregeneration-absent path. A real in-game cycle has
-**not** been run; engine plumbing is stubbed as described below.
+and description paths, plus the Enhanced-Bioregeneration-absent path. That includes explicit
+assertions that `TraumaSavant`, `WCE2_SuturedEye` and `WCE2_SuturedMouth` are **still cured** and
+**still listed in the preview**, and that the two J cohort implants are preserved with their adverse
+`deathMtbDays` effects intact. A real in-game cycle has **not** been run; engine plumbing is stubbed
+as described below.
 
 ## Build and test
 
@@ -146,15 +166,24 @@ installed XML (none of these proprietary files are in this repository):
 | `Odyssey_HediffDefs_Hediffs_BodyParts_Prosthetic.xml` | Odyssey `Defs/HediffDefs/Hediffs_BodyParts_Prosthetic.xml` |
 | `Odyssey_ThingDefs_Items_Items_Exotic.xml` | Odyssey `Defs/ThingDefs_Items/Items_Exotic.xml` |
 | `MAG_1.6_Compat_Ideology_Defs_Ideology_Crafting.xml` | MAG `1.6/Compat/Ideology/Defs/Ideology_Crafting.xml` |
+| `WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Growths.xml` | WCE2 `1.6/Defs/WCE2_Hediffs/WCE2_Local_Growths.xml` |
+| `WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Implants.xml` | WCE2 `1.6/Defs/WCE2_Hediffs/WCE2_Local_Implants.xml` |
+| `WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_Implants_Torso.xml` | WCE2 `1.6/Defs/WCE2_Recipes/WCE2_Recipes_Implants_Torso.xml` |
+| `WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_LowTech.xml` | WCE2 `1.6/Defs/WCE2_Recipes/WCE2_Recipes_LowTech.xml` |
+| `Core_Defs_HediffDefs_Hediffs_Local_Misc.xml` | Core `Defs/HediffDefs/Hediffs_Local_Misc.xml` (`TraumaSavant`) |
+| `Core_Defs_HediffGiverSetDefs_HediffGiverSets.xml` | Core `Defs/HediffGiverSetDefs/HediffGiverSets.xml` (Brain giver) |
 
 The test runner (`Tests/RimworldBiosculpterCompat.Tests`) runs the real vanilla `CycleCompleted` and
 `GetHealingDescriptionForPawn`, and the real Enhanced Bioregeneration patches, with the mod's Harmony
 patches registered through its startup class. It checks that:
 
-* the bug reproduces for all 24 defNames without the fix (both cycle implementations, both tooltips)
-* the protected set equals exactly the 24 approved `defName`s — nothing missing, nothing unapproved
-* all 24 survive a bioregeneration cycle, as the same instance on the part their install/gene XML says
-* the tooltip no longer lists them, while still listing a real injury and `VPEP_BrainLeech`
+* the bug reproduces for all 26 defNames without the fix (both cycle implementations, both tooltips)
+* the protected set equals exactly the 26 approved `defName`s — nothing missing, nothing unapproved
+* all 26 survive a bioregeneration cycle, as the same instance on the part their install/gene XML says;
+  the WCE2 J implants keep their `Hediff_Implant` def (and therefore their adverse `deathMtbDays` timers)
+* `TraumaSavant`, `WCE2_SuturedEye` and `WCE2_SuturedMouth` are still cured by the cycle and still
+  appear in the preview on both vanilla and Enhanced Bioregeneration paths (the deliberate K/L choice)
+* the tooltip no longer lists any of the 26, while still listing a real injury and `VPEP_BrainLeech`
 * injuries, other hediffs, other pawns, medic cycles and out-of-cycle removal are unaffected
 * near-miss defNames (`VPEP_PuppetX`, `vpep_puppet`, `MAG_ArchonexusCore_`, `RemoteShielder`, ...) are not matched
 * the protection works when Enhanced Bioregeneration's own patches are removed, and the optional patch

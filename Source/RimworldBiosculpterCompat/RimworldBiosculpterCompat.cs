@@ -38,6 +38,14 @@ namespace RimworldBiosculpterCompat
     ///                                         brain (TargetEffectInstallImplantInOtherPawn on the item)
     ///   MAG_ArchonexusCore_One/_Two/_Three    More Archotech Garbage, 1.6/Compat/Ideology/Defs/Ideology_Crafting.xml,
     ///                                         torso (CompProperties_UseEffectInstallImplant bodyPart Torso)
+    ///   WCE2_NeutroamineIncubator             War Crimes Expanded 2, 1.6/Defs/WCE2_Hediffs/WCE2_Local_Growths.xml,
+    ///                                         torso (Recipe_InstallImplant WCE2_InstallNeutroamineIncubator is
+    ///                                         appliedOnFixedBodyParts Torso; the hediff itself has no bodyPart).
+    ///   WCE2_GrowthStimulator                 War Crimes Expanded 2, same file, torso (same install-recipe evidence).
+    ///                                         These two are resource farms: preserving the implant is deliberate, but it
+    ///                                         also preserves the adverse effects, including deathMtbDays 60 and 30.
+    ///   Deliberately NOT protected: TraumaSavant, WCE2_SuturedEye and WCE2_SuturedMouth. The user chose to let the pod
+    ///   heal those (speech/hearing restored, sutures removed); they remain curable and listed in the tooltip.
     /// All of these use the default everCurableByItem=true, none sets countsAsAddedPartOrImplant and none
     /// is chronic, so once their part is restorable the cycle cures them like injuries. keepOnBodyPartRestoration
     /// is ignored by the biosculpter cycle (it only affects generic part-restoration handling), which is why the
@@ -117,6 +125,12 @@ namespace RimworldBiosculpterCompat
         /// <summary>More Archotech Garbage archonexus key III, installed on the torso.</summary>
         public const string ArchonexusKeyThreeDefName = "MAG_ArchonexusCore_Three";
 
+        /// <summary>WCE2 neutroamine farm implant on the torso; install item is consumed and never refunded by Cure.</summary>
+        public const string NeutroamineIncubatorDefName = "WCE2_NeutroamineIncubator";
+
+        /// <summary>WCE2 meat farm implant on the torso; preserving it also preserves deathMtbDays 30.</summary>
+        public const string GrowthStimulatorDefName = "WCE2_GrowthStimulator";
+
         /// <summary>All protected defNames. Always compared with Ordinal (case-sensitive) equality.</summary>
         public static readonly string[] AllDefNames =
         {
@@ -144,6 +158,7 @@ namespace RimworldBiosculpterCompat
             ArchonexusKeyOneDefName,
             ArchonexusKeyTwoDefName,
             ArchonexusKeyThreeDefName,
+            NeutroamineIncubatorDefName, GrowthStimulatorDefName,
         };
 
         public static bool IsPreservedDef(HediffDef def)
@@ -315,7 +330,7 @@ namespace RimworldBiosculpterCompat
     public static class RimworldBiosculpterCompatStartup
     {
         public const string HarmonyId = "ErtzFiend.RimworldBiosculpterCompat";
-        public const string Version = "1.2.0";
+        public const string Version = "1.2.1";
 
         static RimworldBiosculpterCompatStartup()
         {

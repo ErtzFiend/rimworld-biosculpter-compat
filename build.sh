@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 ROOT="$PWD"
-VERSION=1.2.0
+VERSION=1.2.1
 MOD=RimworldBiosculpterCompat
 export RIMWORLD_LIBS="${RIMWORLD_LIBS:-/root/rimworld_libs/1.7.5005-rev1082}"
 
@@ -28,7 +28,13 @@ for f in \
   VRESaurids_1.6_Defs_GeneDefs_GeneDefs_Endogenes.xml \
   Odyssey_HediffDefs_Hediffs_BodyParts_Prosthetic.xml \
   Odyssey_ThingDefs_Items_Items_Exotic.xml \
-  MAG_1.6_Compat_Ideology_Defs_Ideology_Crafting.xml; do
+  MAG_1.6_Compat_Ideology_Defs_Ideology_Crafting.xml \
+  WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Growths.xml \
+  WCE2_1.6_Defs_WCE2_Hediffs_WCE2_Local_Implants.xml \
+  WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_Implants_Torso.xml \
+  WCE2_1.6_Defs_WCE2_Recipes_WCE2_Recipes_LowTech.xml \
+  Core_Defs_HediffDefs_Hediffs_Local_Misc.xml \
+  Core_Defs_HediffGiverSetDefs_HediffGiverSets.xml; do
   [[ -f "$RIMWORLD_LIBS/data/$f" ]] || { echo "missing test fixture: $RIMWORLD_LIBS/data/$f (see README.md)"; exit 1; }
 done
 

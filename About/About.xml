@@ -3,7 +3,7 @@
   <name>Rimworld Biosculpter Compat</name>
   <author>ErtzFiend</author>
   <packageId>ErtzFiend.RimworldBiosculpterCompat</packageId>
-  <modVersion>1.2.0</modVersion>
+  <modVersion>1.2.1</modVersion>
   <url>https://github.com/ErtzFiend/rimworld-biosculpter-compat</url>
   <supportedVersions>
     <li>1.7</li>
@@ -30,11 +30,12 @@
     <li>vanillaquestsexpanded.ancients</li>
     <li>lts.I</li>
     <li>zal.morearchotechgarbage</li>
+    <li>Mersid.WCE2Updated.Core</li>
     <li>BattIeBear.BattIePatch.EnhancedBioregeneration</li>
   </loadAfter>
   <description>Stops a biosculpter bioregeneration cycle from removing implants, gene hediffs and psycast hediffs that are part of a pawn's build rather than injuries.
 
-Protected (exact defNames, nothing else - 24 total):
+Protected (exact defNames, nothing else - 26 total):
 - VPEP_Puppet and VPEP_Puppeteer (Vanilla Psycasts Expanded - Puppeteer)
 - ControlSublinkImplant, RemoteRepairerImplant, MechFormfeederImplant, RemoteShielderImplant, RepairProbeImplant (Biotech mechanitor implants)
 - WarprogrammerInterfaceImplant, RemoteDominatorImplant, RemoteResurrectorImplant, SignalBoosterImplant, MechwombImplant, LTS_ShoulderTurretActive, LTS_ShoulderBeamTurretActive, LTS_ShoulderChargeTurretActive (Integrated Implants)
@@ -44,15 +45,20 @@ Protected (exact defNames, nothing else - 24 total):
 - VRESaurids_SauridClaws (Vanilla Races Expanded - Saurid)
 - SentienceCatalyst (Odyssey)
 - MAG_ArchonexusCore_One, MAG_ArchonexusCore_Two, MAG_ArchonexusCore_Three (More Archotech Garbage)
+- WCE2_NeutroamineIncubator, WCE2_GrowthStimulator (War Crimes Expanded 2; J resource-farm implants)
 
-These hediffs sit on the brain, torso, hands and jaw. When those parts are restorable (for example with BattIePatch: Enhanced Bioregeneration), a bioregeneration cycle treats them like injuries and cures them, which strips mechanitor implants, turrets, claws, gene attacks, archonexus keys, the sentience catalyst or the puppet link (the last causing abasia and a psychic coma). None of them is flagged countsAsAddedPartOrImplant or chronic, and all default to everCurableByItem=true; keepOnBodyPartRestoration does not protect them from the cycle.
+These hediffs sit on the brain, torso, hands and jaw. When those parts are restorable (for example with BattIePatch: Enhanced Bioregeneration), a bioregeneration cycle treats them like injuries and cures them, which strips mechanitor implants, turrets, claws, gene attacks, archonexus keys, the sentience catalyst, the puppet link (the last causing abasia and a psychic coma) or a deliberately installed WCE2 resource farm. None of them is flagged countsAsAddedPartOrImplant or chronic, and all default to everCurableByItem=true; keepOnBodyPartRestoration does not protect them from the cycle.
+
+The two WCE2 farm implants are protected only as an explicit choice to keep the farm. Preserving them also preserves their adverse effects: deathMtbDays 60 (neutroamine incubator) and 30 (growth stimulator), plus pain, hunger and the hediff-giver conditions. The mod does not remove those effects; it only stops the pod from deleting the implant.
+
+Deliberately NOT protected (the user's K/L healing choice): TraumaSavant (K) and WCE2_SuturedEye / WCE2_SuturedMouth (L) remain curable. The pod still heals a trauma savant (restoring speech/hearing, removing the +0.5 Manipulation bonus) and still removes sutures, and both still appear in the "will heal" preview on the vanilla and Enhanced Bioregeneration paths.
 
 What it does:
 - Protects the exact defNames above, only on the pod occupant, and only while a bioregeneration cycle is completing.
 - Hides them from the pod's "will heal" tooltip on both the vanilla and Enhanced Bioregeneration description paths, so the listed conditions match what actually happens.
 - Leaves ordinary healing untouched: wounds, scars, missing parts, blood loss, other brain hediffs and every other condition still heal. Medic cycles and removal outside the cycle are unchanged. Implants are not made incurable anywhere else.
 
-Required: Harmony. Optional mods (each protection simply does nothing if its mod is absent): Biotech, Ideology, Odyssey, Vanilla Psycasts Expanded + Puppeteer, Vanilla Races Expanded - Sanguophage/Fungoid/Saurid, Vanilla Quests Expanded - Ancients, Integrated Implants, More Archotech Garbage, and BattIePatch: Enhanced Bioregeneration (also improves the tooltip). Load after all of them.
+Required: Harmony. Optional mods (each protection simply does nothing if its mod is absent): Biotech, Ideology, Odyssey, Vanilla Psycasts Expanded + Puppeteer, Vanilla Races Expanded - Sanguophage/Fungoid/Saurid, Vanilla Quests Expanded - Ancients, Integrated Implants, More Archotech Garbage, War Crimes Expanded 2, and BattIePatch: Enhanced Bioregeneration (also improves the tooltip). Load after all of them.
 
 Built and tested for RimWorld 1.7 (1.7.5005 rev1082).</description>
 </ModMetaData>
