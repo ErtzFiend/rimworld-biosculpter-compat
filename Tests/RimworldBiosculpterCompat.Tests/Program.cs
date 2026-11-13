@@ -32,7 +32,26 @@ internal static class Program
     // Real data read from installed mod/game XML (copied outside the repo).
     static HediffDef PuppetDef, PuppeteerDef, BrainLeechDef, InjuryDef;
     static HediffDef ControlSublinkDef, RemoteRepairerDef, MechFormfeederDef, WarprogrammerDef, ShoulderTurretDef, SharpTalonsDef;
-    static BodyPartDef BrainDef, HeadDef, FingerDef, TorsoDef, HandDef;
+    static HediffDef RemoteShielderDef, RepairProbeDef, RemoteDominatorDef, RemoteResurrectorDef, SignalBoosterDef,
+        MechwombDef, ShoulderBeamActiveDef, ShoulderChargeActiveDef, PlasteelClawsDef, InfectorHandsDef, InfectorMouthDef,
+        SauridClawsDef, SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef;
+    static BodyPartDef BrainDef, HeadDef, FingerDef, TorsoDef, HandDef, JawDef;
+    // Assigned in LoadRealData: a field initializer here would force the game assemblies to load
+    // before Main registers the AssemblyLoadContext resolver.
+    static Dictionary<string, BodyPartDef> PartDefs;
+
+    // Exact user-approved set for v1.2.0 (original 8 + 16 newly approved). The tests assert the mod
+    // protects exactly this set and nothing else.
+    static readonly string[] ApprovedDefNames =
+    {
+        "VPEP_Puppet", "VPEP_Puppeteer", "ControlSublinkImplant", "RemoteRepairerImplant",
+        "MechFormfeederImplant", "RemoteShielderImplant", "RepairProbeImplant",
+        "WarprogrammerInterfaceImplant", "RemoteDominatorImplant", "RemoteResurrectorImplant",
+        "SignalBoosterImplant", "MechwombImplant", "LTS_ShoulderTurretActive",
+        "LTS_ShoulderBeamTurretActive", "LTS_ShoulderChargeTurretActive", "VRE_SharpTalons",
+        "VQEA_PlasteelClaws", "VRE_InfectorHands", "VRE_InfectorMouth", "VRESaurids_SauridClaws",
+        "SentienceCatalyst", "MAG_ArchonexusCore_One", "MAG_ArchonexusCore_Two", "MAG_ArchonexusCore_Three",
+    };
     static List<BodyPartDef> VanillaRestore, EnhancedRestore;
 
     static int Main()
@@ -96,8 +115,8 @@ internal static class Program
         // ---------- Install the fix exactly as the game does ----------
         RuntimeHelpers.RunClassConstructor(typeof(RimworldBiosculpterCompatStartup).TypeHandle);
         Console.WriteLine("\n== Harmony registration ==");
-        Check("startup logged its banner via Verse.Log", GameLog.Any(l => l.StartsWith("[Rimworld Biosculpter Compat 1.1.0]")));
-        Check("startup log names all 8 protected defNames", PreservedHediffs.AllDefNames.All(n => GameLog.Any(l => l.Contains(n))));
+        Check("startup logged its banner via Verse.Log", GameLog.Any(l => l.StartsWith("[Rimworld Biosculpter Compat 1.2.0]")));
+        Check("startup log names all 24 protected defNames", PreservedHediffs.AllDefNames.All(n => GameLog.Any(l => l.Contains(n))));
         var cc = Harmony.GetPatchInfo(CycleCompletedMethod);
         Check("CycleCompleted prefix from the mod",
             cc.Prefixes.Any(p => p.owner == RimworldBiosculpterCompatStartup.HarmonyId && p.PatchMethod.DeclaringType == typeof(Patch_HealingCycle_CycleCompleted)));
@@ -123,14 +142,27 @@ internal static class Program
         // ---------- Exact def checks ----------
         Console.WriteLine("\n== Exact defName matching ==");
         foreach (var def in AllProtectedDefs()) Check($"{def.defName} preserved-def", PreservedHediffs.IsPreservedDef(def));
-        Check("all 8 protected defNames present", PreservedHediffs.AllDefNames.Length == 8);
+        Check("approved list has 24 unique defNames (8 original + 16 newly approved)",
+            ApprovedDefNames.Length == 24 && ApprovedDefNames.Distinct().Count() == 24);
+        Check("mod protects exactly the 24 approved defNames (none missing, no unapproved)",
+            PreservedHediffs.AllDefNames.OrderBy(n => n, StringComparer.Ordinal)
+                .SequenceEqual(ApprovedDefNames.OrderBy(n => n, StringComparer.Ordinal)));
+        Check("mod's own list has 24 unique defNames",
+            PreservedHediffs.AllDefNames.Length == 24 && PreservedHediffs.AllDefNames.Distinct().Count() == 24);
+        Check("every approved defName is protected",
+            ApprovedDefNames.All(n => PreservedHediffs.IsPreservedDef(new HediffDef { defName = n })));
         Check("VPEP_BrainLeech NOT preserved", !PreservedHediffs.IsPreservedDef(BrainLeechDef));
         Check("ordinary injury NOT preserved", !PreservedHediffs.IsPreservedDef(InjuryDef));
         foreach (var n in new[]
                  {
                      "vpep_puppet", "VPEP_Puppet ", "VPEP_PuppetX", "VPEP_Puppeteers", "Puppet", "Puppeteer",
                      "controlsublinkimplant", "ControlSublink", "MechFormfeeder", "WarprogrammerInterface",
-                     "LTS_ShoulderTurret", "VRE_SharpTalon", "VPEP_Puppet_Master_Death", ""
+                     "LTS_ShoulderTurret", "VRE_SharpTalon", "VPEP_Puppet_Master_Death", "",
+                     "RemoteShielder", "RepairProbe", "RemoteDominator", "RemoteResurrector", "SignalBooster",
+                     "Mechwomb", "LTS_ShoulderBeamTurret", "LTS_ShoulderChargeTurret",
+                     "MAG_ArchonexusCore_", "MAG_ArchonexusCore_Four", "mag_ArchonexusCore_One",
+                     "VQEA_PlasteelClaw", "VRE_InfectorHand", "VRE_InfectorMouths", "VRESaurids_SauridClaw",
+                     "sentiencecatalyst", "SentienceCatalystX", "SentienceCatalyst "
                  })
             Check($"'{n}' NOT preserved (exact, case-sensitive)", !PreservedHediffs.IsPreservedDef(new HediffDef { defName = n }));
         Check("null def NOT preserved", !PreservedHediffs.IsPreservedDef(null));
@@ -166,6 +198,7 @@ internal static class Program
             {
                 Check($"{path}: tooltip no longer lists {def.defName} (label '{def.label}')", !text.Contains(def.label));
             }
+            Check($"{path}: no 'Archonexus key' text at all (labels I/II/III share a prefix)", !text.Contains("Archonexus key"));
             Check($"{path}: tooltip still lists the ordinary injury ('{InjuryDef.label}')", text.Contains(InjuryDef.label));
             Check($"{path}: tooltip still lists other brain hediff VPEP_BrainLeech", text.Contains(BrainLeechDef.label));
             Check($"{path}: description scope closed after the call", BiosculpterScope.DescriptionPawn == null);
@@ -228,6 +261,28 @@ internal static class Program
             Check("after exception, removal outside cycle still works", !Has(p2, h2));
         }
 
+        // Optional mod absent: remove Enhanced Bioregeneration's own patches and run the real vanilla
+        // CycleCompleted body. Protection must still hold and ordinary healing must still work.
+        // (The vanilla description path with this mod enabled is already covered above.)
+        Console.WriteLine("\n== Optional mod (Enhanced Bioregeneration) absent ==");
+        new Harmony("test.realmod.EnhancedBioregeneration").UnpatchAll("test.realmod.EnhancedBioregeneration");
+        Check("EB absent: EB prefixes really are gone",
+            !Harmony.GetPatchInfo(CycleCompletedMethod).Prefixes.Any(p => p.owner == "test.realmod.EnhancedBioregeneration"));
+        {
+            var (pawn, keep, _, injury) = MakePawn(PuppetDef);
+            RunCycle(Regen(), pawn);
+            Check("EB absent: VPEP_Puppet still preserved on the vanilla CycleCompleted body", Has(pawn, keep));
+            Check("EB absent: ordinary finger injury still healed", !Has(pawn, injury));
+            var (pawn2, keep2, _, injury2) = MakePawn(SharpTalonsDef);
+            RunCycle(Regen(), pawn2);
+            Check("EB absent: VRE_SharpTalons still preserved on the vanilla body", Has(pawn2, keep2) && !Has(pawn2, injury2));
+        }
+        Check("EB absent: optional patch helper with a missing type is a safe no-op",
+            EnhancedBioregenerationSupport.PatchType(new Harmony("test.ebless"), null) == 0);
+
+        // Restore the installed EB patches so the final UnpatchAll test still exercises the EB path.
+        new Harmony("test.realmod.EnhancedBioregeneration").PatchAll(typeof(HealingCycle_Utils).Assembly);
+
         // Unpatching restores original behaviour (the patches are what make the difference).
         var modHarmony = new Harmony(RimworldBiosculpterCompatStartup.HarmonyId);
         modHarmony.UnpatchAll(RimworldBiosculpterCompatStartup.HarmonyId);
@@ -245,15 +300,26 @@ internal static class Program
     static IEnumerable<HediffDef> AllProtectedDefs() => new[]
     {
         PuppetDef, PuppeteerDef, ControlSublinkDef, RemoteRepairerDef, MechFormfeederDef,
-        WarprogrammerDef, ShoulderTurretDef, SharpTalonsDef
+        RemoteShielderDef, RepairProbeDef, WarprogrammerDef, RemoteDominatorDef, RemoteResurrectorDef,
+        SignalBoosterDef, MechwombDef, ShoulderTurretDef, ShoulderBeamActiveDef, ShoulderChargeActiveDef,
+        SharpTalonsDef, PlasteelClawsDef, InfectorHandsDef, InfectorMouthDef, SauridClawsDef,
+        SentienceCatalystDef, ArchonexusKeyOneDef, ArchonexusKeyTwoDef, ArchonexusKeyThreeDef
     };
 
-    static BodyPartDef ExpectedPart(HediffDef def)
+    // The body part each approved hediff actually attaches to, from its installing ThingDef /
+    // VEF gene extension. LTS shoulder-turret active hediffs carry no bodyPart in their own XML;
+    // their install recipes are appliedOnFixedBodyParts Torso, so that is the runtime mount used here.
+    static string PartName(HediffDef def)
     {
-        if (def == ShoulderTurretDef) return TorsoDef;
-        if (def == SharpTalonsDef) return HandDef;
-        return BrainDef;
+        if (def == SharpTalonsDef || def == PlasteelClawsDef || def == InfectorHandsDef || def == SauridClawsDef) return "Hand";
+        if (def == InfectorMouthDef) return "Jaw";
+        if (def == ShoulderTurretDef || def == ShoulderBeamActiveDef || def == ShoulderChargeActiveDef
+            || def == MechwombDef || def == ArchonexusKeyOneDef || def == ArchonexusKeyTwoDef
+            || def == ArchonexusKeyThreeDef) return "Torso";
+        return "Brain";
     }
+
+    static BodyPartDef ExpectedPart(HediffDef def) => PartDefs[PartName(def)];
 
     // ---------------- real data ----------------
     static void LoadRealData()
@@ -313,6 +379,87 @@ internal static class Program
         var talonParts = talonGene.Element("bodyparts").Elements("li").Select(e => e.Value.Trim()).ToList();
         Check("VRE_SharpTalons gene maps to both hands", talonParts.Count == 2 && talonParts.All(p => p == "Hand"));
 
+        // ---- v1.2.0 additions: real XML, same exact defName/label/class/flag assertions ----
+        RemoteShielderDef = FromXml(biotech, "RemoteShielderImplant", "Hediff_Level", "remote shielder");
+        RepairProbeDef = FromXml(biotech, "RepairProbeImplant", "Hediff_Level", "repair probe");
+
+        RemoteDominatorDef = FromXml(ltsBio, "RemoteDominatorImplant", "Hediff_Level", "remote dominator");
+        RemoteResurrectorDef = FromXml(ltsBio, "RemoteResurrectorImplant", "Hediff_Level", "remote resurrector");
+        SignalBoosterDef = FromXml(ltsBio, "SignalBoosterImplant", "Hediff_Level", "signal booster");
+        MechwombDef = FromXml(ltsBio, "MechwombImplant", "Hediff_Level", "mechwomb");
+
+        ShoulderBeamActiveDef = FromXml(ltsShoulder, "LTS_ShoulderBeamTurretActive", "HediffWithComps", "extended shoulder beam turret");
+        ShoulderChargeActiveDef = FromXml(ltsShoulder, "LTS_ShoulderChargeTurretActive", "HediffWithComps", "extended shoulder charge turret");
+
+        var vqeaHediffs = XDocument.Load(Path.Combine(data, "VQEA_1.6_Defs_HediffDefs_Hediffs_Genes.xml"));
+        PlasteelClawsDef = FromXml(vqeaHediffs, "VQEA_PlasteelClaws", "HediffWithComps", "plasteel claw");
+
+        var fungoidHediffs = XDocument.Load(Path.Combine(data, "VRE_Fungoid_1.7_Defs_HediffDefs_Hediffs_Attacks.xml"));
+        InfectorHandsDef = FromXml(fungoidHediffs, "VRE_InfectorHands", "HediffWithComps", "infector hand");
+        InfectorMouthDef = FromXml(fungoidHediffs, "VRE_InfectorMouth", "HediffWithComps", "infector mouth");
+
+        var sauridHediffs = XDocument.Load(Path.Combine(data, "VRESaurids_1.6_Defs_HediffDefs_HediffDef_SauridClaws.xml"));
+        SauridClawsDef = FromXml(sauridHediffs, "VRESaurids_SauridClaws", "HediffWithComps", "saurid claws");
+
+        var odysseyHediffs = XDocument.Load(Path.Combine(data, "Odyssey_HediffDefs_Hediffs_BodyParts_Prosthetic.xml"));
+        SentienceCatalystDef = FromXml(odysseyHediffs, "SentienceCatalyst", "Hediff_SentienceCatalyst", "sentience catalyst");
+
+        var mag = XDocument.Load(Path.Combine(data, "MAG_1.6_Compat_Ideology_Defs_Ideology_Crafting.xml"));
+        ArchonexusKeyOneDef = FromXml(mag, "MAG_ArchonexusCore_One", "HediffWithComps", "Archonexus key I");
+        ArchonexusKeyTwoDef = FromXml(mag, "MAG_ArchonexusCore_Two", "HediffWithComps", "Archonexus key II");
+        ArchonexusKeyThreeDef = FromXml(mag, "MAG_ArchonexusCore_Three", "HediffWithComps", "Archonexus key III");
+
+        // ---- runtime attachment evidence: the part comes from the install comp / VEF gene extension ----
+        string InstallBodyPart(XDocument doc, string hediff) =>
+            doc.Descendants("li")
+               .Where(li => ((string)li.Attribute("Class") ?? "").Contains("InstallImplant"))
+               .Where(li => (string)li.Element("hediffDef") == hediff)
+               .Select(li => (string)li.Element("bodyPart"))
+               .FirstOrDefault();
+
+        List<string> GeneParts(XDocument doc, string hediff) =>
+            doc.Descendants("hediffsToBodyParts").Elements("li")
+               .Where(li => (string)li.Element("hediff") == hediff)
+               .SelectMany(li => li.Element("bodyparts").Elements("li"))
+               .Select(e => e.Value.Trim()).ToList();
+
+        List<string> RecipeInstallParts(XDocument doc, string recipe) =>
+            doc.Descendants("RecipeDef").Where(r => (string)r.Element("defName") == recipe)
+               .SelectMany(r => r.Element("appliedOnFixedBodyParts")?.Elements("li") ?? Enumerable.Empty<XElement>())
+               .Select(e => e.Value.Trim()).ToList();
+
+        var odysseyItems = XDocument.Load(Path.Combine(data, "Odyssey_ThingDefs_Items_Items_Exotic.xml"));
+        Check("RemoteShielderImplant install comp attaches to Brain (Biotech XML)", InstallBodyPart(biotech, "RemoteShielderImplant") == "Brain");
+        Check("RepairProbeImplant install comp attaches to Brain (Biotech XML)", InstallBodyPart(biotech, "RepairProbeImplant") == "Brain");
+        Check("RemoteDominatorImplant install comp attaches to Brain (lts.i XML)", InstallBodyPart(ltsBio, "RemoteDominatorImplant") == "Brain");
+        Check("RemoteResurrectorImplant install comp attaches to Brain (lts.i XML)", InstallBodyPart(ltsBio, "RemoteResurrectorImplant") == "Brain");
+        Check("SignalBoosterImplant install comp attaches to Brain (lts.i XML)", InstallBodyPart(ltsBio, "SignalBoosterImplant") == "Brain");
+        Check("MechwombImplant install comp attaches to Torso (lts.i XML)", InstallBodyPart(ltsBio, "MechwombImplant") == "Torso");
+        Check("SentienceCatalyst install comp attaches to Brain (Odyssey item XML)", InstallBodyPart(odysseyItems, "SentienceCatalyst") == "Brain");
+        foreach (var key in new[] { "MAG_ArchonexusCore_One", "MAG_ArchonexusCore_Two", "MAG_ArchonexusCore_Three" })
+            Check($"{key} install comp attaches to Torso (MAG XML)", InstallBodyPart(mag, key) == "Torso");
+
+        // The LTS active hediffs carry no bodyPart themselves; the installed turret recipes fix Torso.
+        Check("LTS_ShoulderBeamTurretActive def has no bodyPart of its own (runtime part comes from the turret)",
+            ltsShoulder.Root.Elements("HediffDef")
+                .Single(e => (string)e.Element("defName") == "LTS_ShoulderBeamTurretActive").Element("bodyPart") == null);
+        Check("LTS beam turret install recipe mounts on Torso",
+            RecipeInstallParts(ltsShoulder, "LTS_InstallShoulderBeamTurret").SequenceEqual(new[] { "Torso" }));
+        Check("LTS charge turret install recipe mounts on Torso",
+            RecipeInstallParts(ltsShoulder, "LTS_InstallShoulderChargeTurret").SequenceEqual(new[] { "Torso" }));
+
+        var vqeaGenes = XDocument.Load(Path.Combine(data, "VQEA_1.6_Defs_GeneDefs_GeneDefs_Archite.xml"));
+        Check("VQEA_PlasteelClaws gene maps to both hands",
+            GeneParts(vqeaGenes, "VQEA_PlasteelClaws").SequenceEqual(new[] { "Hand", "Hand" }));
+        var fungoidGenes = XDocument.Load(Path.Combine(data, "VRE_Fungoid_1.7_Defs_GeneDefs_GeneDefs_Archite.xml"));
+        Check("VRE_InfectorHands gene maps to both hands",
+            GeneParts(fungoidGenes, "VRE_InfectorHands").SequenceEqual(new[] { "Hand", "Hand" }));
+        Check("VRE_InfectorMouth gene maps to the jaw",
+            GeneParts(fungoidGenes, "VRE_InfectorMouth").SequenceEqual(new[] { "Jaw" }));
+        var sauridGenes = XDocument.Load(Path.Combine(data, "VRESaurids_1.6_Defs_GeneDefs_GeneDefs_Endogenes.xml"));
+        Check("VRESaurids_SauridClaws gene maps to both hands",
+            GeneParts(sauridGenes, "VRESaurids_SauridClaws").SequenceEqual(new[] { "Hand", "Hand" }));
+
         InjuryDef = new HediffDef { defName = "Cut", label = "cut", hediffClass = typeof(Hediff_Injury), injuryProps = new InjuryProps() };
 
         BrainDef = new BodyPartDef { defName = "Brain" };
@@ -320,11 +467,15 @@ internal static class Program
         FingerDef = new BodyPartDef { defName = "Finger" };
         TorsoDef = new BodyPartDef { defName = "Torso" };
         HandDef = new BodyPartDef { defName = "Hand" };
-        var defs = new Dictionary<string, BodyPartDef>
-        {
-            ["Brain"] = BrainDef, ["Head"] = HeadDef, ["Finger"] = FingerDef, ["Torso"] = TorsoDef, ["Hand"] = HandDef
-        };
-        BodyPartDef Bp(string n) => defs.TryGetValue(n, out var d) ? d : defs[n] = new BodyPartDef { defName = n };
+        JawDef = new BodyPartDef { defName = "Jaw" };
+        PartDefs = new Dictionary<string, BodyPartDef>();
+        PartDefs["Brain"] = BrainDef;
+        PartDefs["Head"] = HeadDef;
+        PartDefs["Finger"] = FingerDef;
+        PartDefs["Torso"] = TorsoDef;
+        PartDefs["Hand"] = HandDef;
+        PartDefs["Jaw"] = JawDef;
+        BodyPartDef Bp(string n) => PartDefs.TryGetValue(n, out var d) ? d : PartDefs[n] = new BodyPartDef { defName = n };
 
         var ideo = XDocument.Load(Path.Combine(data, "Ideology_ThingDefs_Buildings_Buildings_Ideo.xml"));
         var regenLi = ideo.Descendants("li").Single(li => (string)li.Element("key") == "bioregeneration");
@@ -337,6 +488,12 @@ internal static class Program
         Check("EnhancedBioregeneration XML patch adds Brain to bodyPartsToRestore", EnhancedRestore.Contains(BrainDef));
         Check("EnhancedBioregeneration XML patch makes Torso restorable", EnhancedRestore.Contains(TorsoDef));
         Check("EnhancedBioregeneration XML patch makes Hand restorable", EnhancedRestore.Contains(HandDef));
+        Check("EnhancedBioregeneration XML patch makes Jaw restorable", EnhancedRestore.Contains(JawDef));
+        Check("EnhancedBioregeneration XML patch makes Shoulder restorable",
+            EnhancedRestore.Any(d => d.defName == "Shoulder"));
+        Check("vanilla restore list does not cover the new brain/torso/hand/jaw parts",
+            !VanillaRestore.Contains(BrainDef) && !VanillaRestore.Contains(TorsoDef)
+            && !VanillaRestore.Contains(HandDef) && !VanillaRestore.Contains(JawDef));
         Console.WriteLine("vanilla bodyPartsToRestore: " + string.Join(",", VanillaRestore.Select(d => d.defName)));
         Console.WriteLine("with EB patch: " + string.Join(",", EnhancedRestore.Select(d => d.defName)));
     }
@@ -389,11 +546,14 @@ internal static class Program
         var torso = new BodyPartRecord { def = TorsoDef };
         var hand = new BodyPartRecord { def = HandDef };
         var finger = new BodyPartRecord { def = FingerDef };
+        var jaw = new BodyPartRecord { def = JawDef };
 
         BodyPartRecord Part(HediffDef def)
         {
-            if (def == ShoulderTurretDef) return torso;
-            if (def == SharpTalonsDef) return hand;
+            string name = PartName(def);
+            if (name == "Hand") return hand;
+            if (name == "Torso") return torso;
+            if (name == "Jaw") return jaw;
             return brain;
         }
 

@@ -6,9 +6,31 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 ROOT="$PWD"
-VERSION=1.1.0
+VERSION=1.2.0
 MOD=RimworldBiosculpterCompat
 export RIMWORLD_LIBS="${RIMWORLD_LIBS:-/root/rimworld_libs/1.7.5005-rev1082}"
+
+# Test fixtures documented in README.md must exist outside the repo before building.
+for f in \
+  VPEPuppeteer_1.6_HediffDefs_Hediffs.xml \
+  Ideology_ThingDefs_Buildings_Buildings_Ideo.xml \
+  EnhancedBioregeneration_1.7_Patches_Buildings_Ideo.xml \
+  Biotech_HediffDefs_Hediffs_Mechanitor.xml \
+  LTSII_1.7_Mods_Biotech_HediffDefs_Hediffs_Mechanitor.xml \
+  LTSII_1.7_HediffDefs_Hediffs_ShoulderWeaponry.xml \
+  VRE_Sanguophage_1.6_HediffDefs_Hediffs.xml \
+  VRE_Sanguophage_1.6_GeneDefs_GeneDefs_Hands.xml \
+  VQEA_1.6_Defs_HediffDefs_Hediffs_Genes.xml \
+  VQEA_1.6_Defs_GeneDefs_GeneDefs_Archite.xml \
+  VRE_Fungoid_1.7_Defs_HediffDefs_Hediffs_Attacks.xml \
+  VRE_Fungoid_1.7_Defs_GeneDefs_GeneDefs_Archite.xml \
+  VRESaurids_1.6_Defs_HediffDefs_HediffDef_SauridClaws.xml \
+  VRESaurids_1.6_Defs_GeneDefs_GeneDefs_Endogenes.xml \
+  Odyssey_HediffDefs_Hediffs_BodyParts_Prosthetic.xml \
+  Odyssey_ThingDefs_Items_Items_Exotic.xml \
+  MAG_1.6_Compat_Ideology_Defs_Ideology_Crafting.xml; do
+  [[ -f "$RIMWORLD_LIBS/data/$f" ]] || { echo "missing test fixture: $RIMWORLD_LIBS/data/$f (see README.md)"; exit 1; }
+done
 
 rm -rf 1.7/Assemblies/*.dll Source/$MOD/obj Tests/$MOD.Tests/bin Tests/$MOD.Tests/obj dist
 dotnet build Source/$MOD/$MOD.csproj -c Release -nologo

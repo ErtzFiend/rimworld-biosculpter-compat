@@ -3,7 +3,7 @@
   <name>Rimworld Biosculpter Compat</name>
   <author>ErtzFiend</author>
   <packageId>ErtzFiend.RimworldBiosculpterCompat</packageId>
-  <modVersion>1.1.0</modVersion>
+  <modVersion>1.2.0</modVersion>
   <url>https://github.com/ErtzFiend/rimworld-biosculpter-compat</url>
   <supportedVersions>
     <li>1.7</li>
@@ -20,29 +20,39 @@
     <li>brrainz.harmony</li>
     <li>Ludeon.RimWorld.Biotech</li>
     <li>Ludeon.RimWorld.Ideology</li>
+    <li>Ludeon.RimWorld.Odyssey</li>
     <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
     <li>VanillaExpanded.VPsycastsE</li>
     <li>VanillaExpanded.VPE.Puppeteer</li>
     <li>vanillaracesexpanded.sanguophage</li>
-    <li>lts.i</li>
+    <li>vanillaracesexpanded.fungoid</li>
+    <li>vanillaracesexpanded.saurid</li>
+    <li>vanillaquestsexpanded.ancients</li>
+    <li>lts.I</li>
+    <li>zal.morearchotechgarbage</li>
     <li>BattIeBear.BattIePatch.EnhancedBioregeneration</li>
   </loadAfter>
   <description>Stops a biosculpter bioregeneration cycle from removing implants, gene hediffs and psycast hediffs that are part of a pawn's build rather than injuries.
 
-Protected (exact defNames, nothing else):
+Protected (exact defNames, nothing else - 24 total):
 - VPEP_Puppet and VPEP_Puppeteer (Vanilla Psycasts Expanded - Puppeteer)
-- ControlSublinkImplant, RemoteRepairerImplant, MechFormfeederImplant (Biotech mechanitor implants)
-- WarprogrammerInterfaceImplant, LTS_ShoulderTurretActive (Integrated Implants)
+- ControlSublinkImplant, RemoteRepairerImplant, MechFormfeederImplant, RemoteShielderImplant, RepairProbeImplant (Biotech mechanitor implants)
+- WarprogrammerInterfaceImplant, RemoteDominatorImplant, RemoteResurrectorImplant, SignalBoosterImplant, MechwombImplant, LTS_ShoulderTurretActive, LTS_ShoulderBeamTurretActive, LTS_ShoulderChargeTurretActive (Integrated Implants)
 - VRE_SharpTalons (Vanilla Races Expanded - Sanguophage)
+- VQEA_PlasteelClaws (Vanilla Quests Expanded - Ancients)
+- VRE_InfectorHands, VRE_InfectorMouth (Vanilla Races Expanded - Fungoid)
+- VRESaurids_SauridClaws (Vanilla Races Expanded - Saurid)
+- SentienceCatalyst (Odyssey)
+- MAG_ArchonexusCore_One, MAG_ArchonexusCore_Two, MAG_ArchonexusCore_Three (More Archotech Garbage)
 
-These hediffs sit on the brain, torso and hands. When those parts are restorable (for example with BattIePatch: Enhanced Bioregeneration), a bioregeneration cycle treats them like injuries and cures them, which strips the implants, the shoulder turret, the talons or the puppet link (the last causing abasia and a psychic coma).
+These hediffs sit on the brain, torso, hands and jaw. When those parts are restorable (for example with BattIePatch: Enhanced Bioregeneration), a bioregeneration cycle treats them like injuries and cures them, which strips mechanitor implants, turrets, claws, gene attacks, archonexus keys, the sentience catalyst or the puppet link (the last causing abasia and a psychic coma). None of them is flagged countsAsAddedPartOrImplant or chronic, and all default to everCurableByItem=true; keepOnBodyPartRestoration does not protect them from the cycle.
 
 What it does:
 - Protects the exact defNames above, only on the pod occupant, and only while a bioregeneration cycle is completing.
 - Hides them from the pod's "will heal" tooltip on both the vanilla and Enhanced Bioregeneration description paths, so the listed conditions match what actually happens.
 - Leaves ordinary healing untouched: wounds, scars, missing parts, blood loss, other brain hediffs and every other condition still heal. Medic cycles and removal outside the cycle are unchanged. Implants are not made incurable anywhere else.
 
-Required: Harmony. Optional mods (each protection simply does nothing if its mod is absent): Biotech, Vanilla Psycasts Expanded + Puppeteer, Vanilla Races Expanded - Sanguophage, Integrated Implants, and BattIePatch: Enhanced Bioregeneration (also improves the tooltip). Load after all of them.
+Required: Harmony. Optional mods (each protection simply does nothing if its mod is absent): Biotech, Ideology, Odyssey, Vanilla Psycasts Expanded + Puppeteer, Vanilla Races Expanded - Sanguophage/Fungoid/Saurid, Vanilla Quests Expanded - Ancients, Integrated Implants, More Archotech Garbage, and BattIePatch: Enhanced Bioregeneration (also improves the tooltip). Load after all of them.
 
 Built and tested for RimWorld 1.7 (1.7.5005 rev1082).</description>
 </ModMetaData>

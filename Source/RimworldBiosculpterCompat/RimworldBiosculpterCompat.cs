@@ -11,14 +11,37 @@ namespace RimworldBiosculpterCompat
 {
     /// <summary>
     /// Exact hediff defNames that must survive a biosculpter bioregeneration cycle.
-    /// Every entry was read from the live, enabled mod set — defName, never the label:
-    ///   VPEP_Puppet / VPEP_Puppeteer    Vanilla Psycasts Expanded - Puppeteer (VPEPuppeteer), brain
-    ///   ControlSublinkImplant           Biotech, Data/Biotech/Defs/HediffDefs/Hediffs_Mechanitor.xml, brain
-    ///   RemoteRepairerImplant           Biotech, same file, brain
-    ///   MechFormfeederImplant           Biotech, same file, brain (label "mech gestation processor")
-    ///   WarprogrammerInterfaceImplant   Integrated Implants (lts.I), 1.7/Mods/Biotech/Defs/HediffDefs/Hediffs_Mechanitor.xml, brain
-    ///   LTS_ShoulderTurretActive        Integrated Implants (lts.I), 1.7/Defs/HediffDefs/Hediffs_ShoulderWeaponry.xml, torso
-    ///   VRE_SharpTalons                 Vanilla Races Expanded - Sanguophage, 1.6/Defs/HediffDefs/Hediffs.xml, one per hand
+    /// Every entry was read from the live, enabled mod set — defName, never the label.
+    /// Part names below are the part the hediff is actually attached to at runtime, from the
+    /// installing ThingDef's CompProperties_UseEffectInstallImplant / a VEF GeneExtension, not a guess:
+    ///   VPEP_Puppet / VPEP_Puppeteer          Vanilla Psycasts Expanded - Puppeteer (VPEPuppeteer), brain
+    ///   ControlSublinkImplant                 Biotech, Defs/HediffDefs/Hediffs_Mechanitor.xml, brain
+    ///   RemoteRepairerImplant                 Biotech, same file, brain
+    ///   MechFormfeederImplant                 Biotech, same file, brain (label "mech gestation processor")
+    ///   RemoteShielderImplant                 Biotech, same file, brain (RemoteShielder install comp)
+    ///   RepairProbeImplant                    Biotech, same file, brain (RepairProbe install comp)
+    ///   WarprogrammerInterfaceImplant         Integrated Implants (lts.I), 1.7/Mods/Biotech/Defs/HediffDefs/Hediffs_Mechanitor.xml, brain
+    ///   RemoteDominatorImplant                lts.I, same file, brain
+    ///   RemoteResurrectorImplant              lts.I, same file, brain
+    ///   SignalBoosterImplant                  lts.I, same file, brain (SignalBooster/High/Ultra install comps)
+    ///   MechwombImplant                       lts.I, same file, torso (Mechwomb install comp)
+    ///   LTS_ShoulderTurretActive              lts.I, 1.7/Defs/HediffDefs/Hediffs_ShoulderWeaponry.xml, torso
+    ///   LTS_ShoulderBeamTurretActive          lts.I, same file, torso (the def carries no bodyPart itself;
+    ///                                         its install recipe is appliedOnFixedBodyParts Torso)
+    ///   LTS_ShoulderChargeTurretActive        lts.I, same file, torso (same evidence)
+    ///   VRE_SharpTalons                       Vanilla Races Expanded - Sanguophage, one per hand
+    ///   VQEA_PlasteelClaws                    Vanilla Quests Expanded - Ancients, gene hediff, one per hand
+    ///   VRE_InfectorHands                     Vanilla Races Expanded - Fungoid, gene hediff, one per hand
+    ///   VRE_InfectorMouth                     Vanilla Races Expanded - Fungoid, gene hediff, jaw
+    ///   VRESaurids_SauridClaws                Vanilla Races Expanded - Saurid, gene hediff, one per hand
+    ///   SentienceCatalyst                     Odyssey, Defs/HediffDefs/Hediffs_BodyParts_Prosthetic.xml,
+    ///                                         brain (TargetEffectInstallImplantInOtherPawn on the item)
+    ///   MAG_ArchonexusCore_One/_Two/_Three    More Archotech Garbage, 1.6/Compat/Ideology/Defs/Ideology_Crafting.xml,
+    ///                                         torso (CompProperties_UseEffectInstallImplant bodyPart Torso)
+    /// All of these use the default everCurableByItem=true, none sets countsAsAddedPartOrImplant and none
+    /// is chronic, so once their part is restorable the cycle cures them like injuries. keepOnBodyPartRestoration
+    /// is ignored by the biosculpter cycle (it only affects generic part-restoration handling), which is why the
+    /// brain implants are at risk too.
     /// </summary>
     public static class PreservedHediffs
     {
@@ -37,14 +60,62 @@ namespace RimworldBiosculpterCompat
         /// <summary>Biotech mechanitor implant on the brain, Hediff_Level, up to 6; label "mech gestation processor".</summary>
         public const string MechFormfeederDefName = "MechFormfeederImplant";
 
+        /// <summary>Biotech mechanitor implant on the brain, Hediff_Level, up to 3 (RemoteShielder).</summary>
+        public const string RemoteShielderDefName = "RemoteShielderImplant";
+
+        /// <summary>Biotech mechanitor implant on the brain, Hediff_Level, up to 6 (RepairProbe).</summary>
+        public const string RepairProbeDefName = "RepairProbeImplant";
+
         /// <summary>Integrated Implants mechanitor implant on the brain, Hediff_Level, up to 3.</summary>
         public const string WarprogrammerInterfaceDefName = "WarprogrammerInterfaceImplant";
+
+        /// <summary>Integrated Implants mechanitor implant on the brain, Hediff_Level.</summary>
+        public const string RemoteDominatorDefName = "RemoteDominatorImplant";
+
+        /// <summary>Integrated Implants mechanitor implant on the brain, Hediff_Level.</summary>
+        public const string RemoteResurrectorDefName = "RemoteResurrectorImplant";
+
+        /// <summary>Integrated Implants mechanitor implant on the brain, Hediff_Level.</summary>
+        public const string SignalBoosterDefName = "SignalBoosterImplant";
+
+        /// <summary>Integrated Implants mechanitor implant on the torso, Hediff_Level.</summary>
+        public const string MechwombDefName = "MechwombImplant";
 
         /// <summary>Integrated Implants hidden shoulder-weapon hediff on the torso; drives the turret verb.</summary>
         public const string ShoulderTurretDefName = "LTS_ShoulderTurretActive";
 
+        /// <summary>Integrated Implants beam-turret active hediff; the installed turret is mounted on the torso.</summary>
+        public const string ShoulderBeamTurretDefName = "LTS_ShoulderBeamTurretActive";
+
+        /// <summary>Integrated Implants charge-turret active hediff; the installed turret is mounted on the torso.</summary>
+        public const string ShoulderChargeTurretDefName = "LTS_ShoulderChargeTurretActive";
+
         /// <summary>Vanilla Races Expanded - Sanguophage gene hediff, one per hand.</summary>
         public const string SharpTalonsDefName = "VRE_SharpTalons";
+
+        /// <summary>Vanilla Quests Expanded - Ancients archite gene hediff, one per hand.</summary>
+        public const string PlasteelClawsDefName = "VQEA_PlasteelClaws";
+
+        /// <summary>Vanilla Races Expanded - Fungoid gene hediff, one per hand.</summary>
+        public const string InfectorHandsDefName = "VRE_InfectorHands";
+
+        /// <summary>Vanilla Races Expanded - Fungoid gene hediff on the jaw.</summary>
+        public const string InfectorMouthDefName = "VRE_InfectorMouth";
+
+        /// <summary>Vanilla Races Expanded - Saurid gene hediff, one per hand.</summary>
+        public const string SauridClawsDefName = "VRESaurids_SauridClaws";
+
+        /// <summary>Odyssey archotech sentience hediff installed on an animal's brain.</summary>
+        public const string SentienceCatalystDefName = "SentienceCatalyst";
+
+        /// <summary>More Archotech Garbage archonexus key I, installed on the torso.</summary>
+        public const string ArchonexusKeyOneDefName = "MAG_ArchonexusCore_One";
+
+        /// <summary>More Archotech Garbage archonexus key II, installed on the torso.</summary>
+        public const string ArchonexusKeyTwoDefName = "MAG_ArchonexusCore_Two";
+
+        /// <summary>More Archotech Garbage archonexus key III, installed on the torso.</summary>
+        public const string ArchonexusKeyThreeDefName = "MAG_ArchonexusCore_Three";
 
         /// <summary>All protected defNames. Always compared with Ordinal (case-sensitive) equality.</summary>
         public static readonly string[] AllDefNames =
@@ -54,9 +125,25 @@ namespace RimworldBiosculpterCompat
             ControlSublinkDefName,
             RemoteRepairerDefName,
             MechFormfeederDefName,
+            RemoteShielderDefName,
+            RepairProbeDefName,
             WarprogrammerInterfaceDefName,
+            RemoteDominatorDefName,
+            RemoteResurrectorDefName,
+            SignalBoosterDefName,
+            MechwombDefName,
             ShoulderTurretDefName,
+            ShoulderBeamTurretDefName,
+            ShoulderChargeTurretDefName,
             SharpTalonsDefName,
+            PlasteelClawsDefName,
+            InfectorHandsDefName,
+            InfectorMouthDefName,
+            SauridClawsDefName,
+            SentienceCatalystDefName,
+            ArchonexusKeyOneDefName,
+            ArchonexusKeyTwoDefName,
+            ArchonexusKeyThreeDefName,
         };
 
         public static bool IsPreservedDef(HediffDef def)
@@ -228,7 +315,7 @@ namespace RimworldBiosculpterCompat
     public static class RimworldBiosculpterCompatStartup
     {
         public const string HarmonyId = "ErtzFiend.RimworldBiosculpterCompat";
-        public const string Version = "1.1.0";
+        public const string Version = "1.2.0";
 
         static RimworldBiosculpterCompatStartup()
         {
@@ -268,6 +355,17 @@ namespace RimworldBiosculpterCompat
                 // tooltip text can then list protected hediffs.
                 return 0;
             }
+
+            return PatchType(harmony, utils);
+        }
+
+        /// <summary>
+        /// Patches the resolved WillHeal method. A null type (optional mod absent) is a safe no-op,
+        /// which is also the unit-test seam for the "mod not installed" case.
+        /// </summary>
+        internal static int PatchType(Harmony harmony, Type utils)
+        {
+            if (utils == null || harmony == null) return 0;
 
             MethodInfo willHeal = AccessTools.Method(utils, "WillHeal", new[]
             {
