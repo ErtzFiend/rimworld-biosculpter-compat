@@ -1,0 +1,13 @@
+bin/
+obj/
+dist/
+*.user
+.vs/
+# Built mod assembly is produced by build.sh and shipped only in the release ZIP
+1.7/Assemblies/*.dll
+# Never commit proprietary game/mod assemblies
+**/Assembly-CSharp.dll
+**/0Harmony.dll
+**/UnityStubs.dll
+**/EnhancedBioregeneration.dll
+**/VPEPuppeteer.dll
