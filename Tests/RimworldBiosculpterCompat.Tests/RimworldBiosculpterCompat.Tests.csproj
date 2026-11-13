@@ -1,29 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Builds against the installed RimWorld 1.7.5005 rev1082 managed assemblies.
-    Proprietary DLLs are referenced from RIMWORLD_LIBS (outside this repository) and are
-    never copied to the output (Private=false).
+    Regression tests run on stock .NET 10 against the REAL installed game/mod assemblies
+    (RimWorld 1.7.5005 rev1082 Assembly-CSharp, Harmony 3.0 from brrainz.harmony,
+    BattIePatch: Enhanced Bioregeneration). Those DLLs live in RIMWORLD_LIBS outside the repo.
   -->
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>PuppetBioRegenFix</AssemblyName>
-    <RootNamespace>PuppetBioRegenFix</RootNamespace>
-    <Version>1.0.0</Version>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <DebugType>none</DebugType>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
-    <OutputPath>$(MSBuildThisFileDirectory)../../1.7/Assemblies/</OutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)obj/</BaseIntermediateOutputPath>
+    <RollForward>Major</RollForward>
     <RimWorldLibs Condition="'$(RIMWORLD_LIBS)' != ''">$(RIMWORLD_LIBS)</RimWorldLibs>
     <RimWorldLibs Condition="'$(RimWorldLibs)' == ''">/root/rimworld_libs/1.7.5005-rev1082</RimWorldLibs>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../Source/RimworldBiosculpterCompat/RimworldBiosculpterCompat.csproj" />
     <Reference Include="Assembly-CSharp"><HintPath>$(RimWorldLibs)/Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityStubs"><HintPath>$(RimWorldLibs)/UnityStubs.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="0Harmony"><HintPath>$(RimWorldLibs)/0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="EnhancedBioregeneration"><HintPath>$(RimWorldLibs)/EnhancedBioregeneration.dll</HintPath><Private>false</Private></Reference>
+    <!-- Verse.Log uses Brutal.Logging, which needs this public Microsoft package on stock .NET -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
 </Project>

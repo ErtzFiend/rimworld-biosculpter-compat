@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>Puppet Bio-Regeneration Fix</name>
+  <name>Rimworld Biosculpter Compat</name>
   <author>ErtzFiend</author>
-  <packageId>ErtzFiend.PuppetBioRegenerationFix</packageId>
-  <modVersion>1.0.0</modVersion>
-  <url>https://github.com/ErtzFiend/rimworld-puppet-bio-regeneration-fix</url>
+  <packageId>ErtzFiend.RimworldBiosculpterCompat</packageId>
+  <modVersion>1.1.0</modVersion>
+  <url>https://github.com/ErtzFiend/rimworld-biosculpter-compat</url>
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>
@@ -15,28 +15,34 @@
       <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
       <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
     </li>
-    <li>
-      <packageId>Ludeon.RimWorld.Ideology</packageId>
-      <displayName>Ideology</displayName>
-    </li>
-    <li>
-      <packageId>VanillaExpanded.VPE.Puppeteer</packageId>
-      <displayName>Vanilla Psycasts Expanded - Puppeteer</displayName>
-      <steamWorkshopUrl>steam://url/CommunityFilePage/3033779606</steamWorkshopUrl>
-    </li>
   </modDependencies>
   <loadAfter>
     <li>brrainz.harmony</li>
+    <li>Ludeon.RimWorld.Biotech</li>
     <li>Ludeon.RimWorld.Ideology</li>
+    <li>OskarPotocki.VanillaFactionsExpanded.Core</li>
     <li>VanillaExpanded.VPsycastsE</li>
     <li>VanillaExpanded.VPE.Puppeteer</li>
+    <li>vanillaracesexpanded.sanguophage</li>
+    <li>lts.i</li>
     <li>BattIeBear.BattIePatch.EnhancedBioregeneration</li>
   </loadAfter>
-  <description>Keeps Vanilla Psycasts Expanded - Puppeteer's puppet (VPEP_Puppet) and puppet master (VPEP_Puppeteer) hediffs from being "healed" away by a biosculpter bioregeneration cycle.
+  <description>Stops a biosculpter bioregeneration cycle from removing implants, gene hediffs and psycast hediffs that are part of a pawn's build rather than injuries.
 
-Both hediffs sit on the brain. When the brain is a restorable part (for example with BattIePatch: Enhanced Bioregeneration), the cycle cures them like an injury. That breaks the puppet link, and a removed puppet hediff gives abasia and a psychic coma.
+Protected (exact defNames, nothing else):
+- VPEP_Puppet and VPEP_Puppeteer (Vanilla Psycasts Expanded - Puppeteer)
+- ControlSublinkImplant, RemoteRepairerImplant, MechFormfeederImplant (Biotech mechanitor implants)
+- WarprogrammerInterfaceImplant, LTS_ShoulderTurretActive (Integrated Implants)
+- VRE_SharpTalons (Vanilla Races Expanded - Sanguophage)
 
-Scope: only those two exact defNames, only on the pod occupant, and only while a bioregeneration cycle is completing. Wounds, scars, missing parts and other conditions still heal normally. Medic cycles and removal outside the cycle are unchanged.
+These hediffs sit on the brain, torso and hands. When those parts are restorable (for example with BattIePatch: Enhanced Bioregeneration), a bioregeneration cycle treats them like injuries and cures them, which strips the implants, the shoulder turret, the talons or the puppet link (the last causing abasia and a psychic coma).
+
+What it does:
+- Protects the exact defNames above, only on the pod occupant, and only while a bioregeneration cycle is completing.
+- Hides them from the pod's "will heal" tooltip on both the vanilla and Enhanced Bioregeneration description paths, so the listed conditions match what actually happens.
+- Leaves ordinary healing untouched: wounds, scars, missing parts, blood loss, other brain hediffs and every other condition still heal. Medic cycles and removal outside the cycle are unchanged. Implants are not made incurable anywhere else.
+
+Required: Harmony. Optional mods (each protection simply does nothing if its mod is absent): Biotech, Vanilla Psycasts Expanded + Puppeteer, Vanilla Races Expanded - Sanguophage, Integrated Implants, and BattIePatch: Enhanced Bioregeneration (also improves the tooltip). Load after all of them.
 
 Built and tested for RimWorld 1.7 (1.7.5005 rev1082).</description>
 </ModMetaData>
